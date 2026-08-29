@@ -21,11 +21,9 @@ export async function execute(interaction, client) {
   const question = interaction.options.getString('question', true);
   const userId = interaction.user.id;
 
-  
   const isUserAdmin = await isAdmin(interaction);
 
   if (!isUserAdmin) {
-    
     const now = new Date();
     let limitRecord = await UserAskLimitModel.findOne({ userId });
 
@@ -57,7 +55,6 @@ export async function execute(interaction, client) {
     }
   }
 
-  
   try {
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
@@ -66,7 +63,7 @@ export async function execute(interaction, client) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'llama-3.1-8b-instant',
+        model: 'llama-3.3-70b-versatile', // Upgraded to Llama 3.3 70B for better accuracy
         messages: [
           {
             role: 'system',
@@ -95,21 +92,13 @@ export async function execute(interaction, client) {
       throw new Error('No response returned from Groq API');
     }
 
-    let responseText = answer;
-    if (responseText.length > 1024) {
-      // Split into multiple parts or truncate if it goes over Discord embeds limits
-      // Embedding value can contain up to 1024 characters per field, but description can contain up to 4096!
-      // To display it beautifully and avoid field value limit of 1024 characters,
-      // let's put it in the Description of the embed instead of a field, which has a 4096 limit.
-    }
-
     const embed = new EmbedBuilder()
       .setColor(0x5865F2)
       .setTitle('Ask AI')
       .addFields(
         { name: 'Question', value: question.length > 256 ? question.slice(0, 253) + '...' : question }
       )
-      .setDescription(responseText.length > 4000 ? responseText.slice(0, 3950) + '\n\n*(response truncated due to Discord limit)*' : responseText)
+      .setDescription(answer.length > 4000 ? answer.slice(0, 3950) + '\n\n*(response truncated due to Discord limit)*' : answer)
       .setFooter({ text: `Asked by ${interaction.user.tag}` })
       .setTimestamp();
 
